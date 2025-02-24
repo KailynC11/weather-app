@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-      
+
+    <!-- Header stuff, including bootstrap, bootswatch, and my weather icon for the downloading to home screen -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather</title>
@@ -9,240 +10,273 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/yeti/bootstrap.min.css" integrity="sha384-mLBxp+1RMvmQmXOjBzRjqqr0dP9VHU2tb3FK6VB0fJN/AOu7/y+CAeYeWJZ4b3ii" crossorigin="anonymous">
     <link rel="apple-touch-icon" href="weatherIcon.png">
 
-      
-   
+
+
 
 </head>
+<!-- first card, white space on screen-->
 <body class="bg-dark">
     <div class="d-flex justify-content-center align-items-center vh-100">
         <form class="card col-12 col-md-6 col-lg-4" id="weather">
             <div class="container mt-2">
                 <h1 class= "text-primary mb-2 text-center">Weather</h1>
                 <h3 class=" text-secondary mb-2 text-center"><span id="txtLocation" aria-label="Loading Location"> Loading Location...</span></h3>
-                <div class="card p-4 shadow-lg">
+                <!-- second card to seperate  location and title blue border area that includes temp, humidity, and conditions-->
+                <div class="card p-4 shadow-lg border border-info">
                     <h2 class="text-center"id="txtTemperature" aria-label="Loading Temperature"> Loading Temperature...</h2>
                     <h3 class="text-center"id="txtHumidity" aria-label="Loading Humidity"> Loading Humidity...</h3>
                     <h4 class="text-center"id="txtConditions" aria-label="Loading Conditions">Loading Conditions...</h4>
-                    <div class="text-center" style="font-size: 2rem;">
-                        <!-- color: cornflowerblue;" -->
+                    <!-- div so the icon could be sized by itself -->
+                    <div class="text-center" style="font-size: 4rem;">
                         <i id="iconWeather" aria-label="icon repersenting weather conditions"></i>
                     </div>
-                    
-                    
                 </div>
+                <!-- link to open meteo outside of blue outline card-->
                 <p class="m-3 text-center">Data from <a href="https://open-meteo.com/" target="_blank" aria-label="Link to Open Meteo">Open Meteo</a></p>
             </div>
         </form>
 
-    
+    <!-- bootstrap, sweet alert, and location api's -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="location.js"></script>
     <script>
         
     //getting users location
-    //used stackoverflow to find out how to get location. this is what it gave me
+    //used stackoverflow to find out how to get location. this is what it gave me by breaking it up into found and not found functions
+    //funtion to requestion location using geolocation to find lat and long
+    //if location is found it called the foundLocation function and if it is not it calls noLocation function
     function requestLocation() {
         navigator.geolocation.getCurrentPosition(foundLocation, noLocation);
     }
 
-    //setting lat and long 
-    //used let becuase they could change and are not always going to be the same
+    //foundLocation sets lat and long, then fetches the city in which those positions lay, before displaying all information...
+    //for that city
     function foundLocation(position) {
+        //setting lat and long
         let lat = position.coords.latitude;
-        let lon = position.coords.longitude;
+        let long = position.coords.longitude;
 
-        //fetch location using open street map and the lat and long gotten above
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+        
+        //fetching the city based on the users lat and long
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`)
             .then(response => response.json())
             .then(data => {
                 let city = data.address?.city
-                const weatherIconAriaLabel= document.getElementById('iconWeather');
+                //this sets the element id of the weather icon to a var so I can change it easily
+                const strWeatherIconAriaLabel= document.getElementById('iconWeather');
                 
-                //also was having issues with sweetalerts and stack overflow had them written in one line this this
-                //Swal.fire("Your City is:", city, "success");
-                //turns city into a var so then I can display it in the html above
+
+                //sweet alert to say location was found
+                //just to make it look a little cleaner and nice
+                Swal.fire({
+                    position: "center",
+                    icon:"success",
+                    title:"Location Found",
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+
+                //sets the location element location to the city they are in
                 document.getElementById("txtLocation").textContent = city;
 
 
-                //let openMeteoAPI = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weathercode`;
-                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=weather_code,temperature_2m,relative_humidity_2m&timezone=auto`)
+                //featching open-meteo information
+                //this is the weather infroamtion that was pulled based off the users lat and long
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${long}&current=weather_code,temperature_2m,relative_humidity_2m&timezone=auto`)
                     .then(response => response.json())
                     .then(data => {
-                        let temperature = data.current.temperature_2m
-                        let humidity = data.current.relative_humidity_2m
-                        let weatherNumber = data.current.weather_code;
-                        const weatherIconAriaLabel = document.getElementById('iconWeather')
-                        const conditionsAriaLabel = document.getElementById('txtConditions')
-                        const locationAriaLabel = document.getElementById('txtLocation')
-                        const temperatureAriaLabel = document.getElementById('txtTemperature')
-                        const humidityAriaLabel = document.getElementById('txtHumidity')
+                        //lots of vars to make it easier to work with everything
+                        //these are setting opem-meteo information to varibles
+                        let strTemperature = data.current.temperature_2m 
+                        let strHumidity = data.current.relative_humidity_2m
+                        let intWeatherNumber = data.current.weather_code;
+                        
+                        //these set the element id's for the arialabels so I can changed them to fit what thw weather is
+                        //to make it more accesible
+                        const strWeatherIconAriaLabel = document.getElementById('iconWeather')
+                        const strCondtionsAriaLabel = document.getElementById('txtConditions')
+                        const intLocationAriaLabel = document.getElementById('txtLocation')
+                        const intTemperatureAriaLabel = document.getElementById('txtTemperature')
+                        const intHumidityAriaLabel = document.getElementById('txtHumidity')
 
-                        document.getElementById("txtTemperature").innerText = "Temperature: " + temperature + " °C"
-                        document.getElementById("txtHumidity").innerText = "Humidity: " + humidity +  "%"
+                        //this sets the temperature and humidity on the screen
+                        document.getElementById("txtTemperature").innerText = "Temperature: " + strTemperature + " °C"
+                        document.getElementById("txtHumidity").innerText = "Humidity: " + strHumidity +  "%"
 
-                        temperatureAriaLabel.setAttribute('aria-label', 'The temperature is ' + temperature)
-                        humidityAriaLabel.setAttribute('aria-label', 'The humidity is ' + humidity)
-                        locationAriaLabel.setAttribute('aria-label', 'Your location is ' + city)
+                        //these set the arialabels for temp, humidity, and location 
+                        //so its accesible to anyone
+                        intTemperatureAriaLabel.setAttribute('aria-label', 'The temperature is ' + strTemperature)
+                        intHumidityAriaLabel.setAttribute('aria-label', 'The humidity is ' + strHumidity)
+                        intLocationAriaLabel.setAttribute('aria-label', 'Your location is ' + city)
 
-                        console.log(weatherNumber)
+                        //this is just to test the weather number
+                        //console.log(intWeatherNumber)
 
-                       if(weatherNumber == 0){
-                        document.getElementById("txtConditions").innerText = "Conditions: Clear Sky"
-                        document.querySelector("#iconWeather").className = "bi bi-brightness-high"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 1){
-                        document.getElementById("txtConditions").innerText = "Conditions: Mostly Clear"
-                        document.querySelector("#iconWeather").className = "bi bi-brightness-high"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 2){
-                        document.getElementById("txtConditions").innerText = "Conditions: Partly Cloudly"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 3){
-                        document.getElementById("txtConditions").innerText = "Conditions: Overcast"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 45){
-                        document.getElementById("txtConditions").innerText = "Conditions: Fog"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-fog"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 48){
-                        document.getElementById("txtConditions").innerText = "Conditions: Fog"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-fog"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 51){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Drizzle"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 53){
-                        document.getElementById("txtConditions").innerText = "Conditions: Moderate Drizzle"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 55){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Drizzle"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 56){
-                        document.getElementById("txtConditions").innerText = "Conditions: Moderate Freezing Drizzle"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 57){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Freezing Drizzle"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 61){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Rain"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-rain-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 63){
-                        document.getElementById("txtConditions").innerText = "Conditions: Moderate Rain"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-rain-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 65){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Rain"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-rain-heavy-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 66){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Freezing Rain"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 67){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Freezing Rain"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 71){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Snowfall"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 73){
-                        document.getElementById("txtConditions").innerText = "Conditions: Moderate Snowfall"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 75){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Snowfall"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 77){
-                        document.getElementById("txtConditions").innerText = "Conditions: Snow Grains"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 80){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Rain Showers"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 81){
-                        document.getElementById("txtConditions").innerText = "Conditions: Moderate Rain Showers"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 82){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Rain Showers"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 85){
-                        document.getElementById("txtConditions").innerText = "Conditions: Light Snow Showers"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 86){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Snow Showers"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 95){
-                        document.getElementById("txtConditions").innerText = "Conditions: Thunderstorms"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 96){
-                        document.getElementById("txtConditions").innerText = "Conditions: Slight Thunderstorms"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }else if(weatherNumber == 99){
-                        document.getElementById("txtConditions").innerText = "Conditions: Heavy Thunderstorms"
-                        document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
-                        weatherIconAriaLabel.setAttribute('aria-label', '')
-                        conditionsAriaLabel.setAttribute('aria-label', '')
-                       }
-
+                        //probably could have done this in a better way that saved space but there was a lot I wanted to change 
+                        //depending on the weatherNumber and so I wrote a HUGE if-else statment
+                        //depending on the weather number, the condtion displayed and icon will change on the screen
+                        //not only that but the aria-labels for the icon and condtions changed making it accesible for anyone wanting to use it
+                        //the next 100 lines is just changing everything to display the right inforation in a way a screen reader can see
+                        if(intWeatherNumber == 0){
+                            document.getElementById("txtConditions").innerText = "Conditions: Clear Sky"
+                            document.querySelector("#iconWeather").className = "bi bi-brightness-high"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting clear sky')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'Clear sky')
+                        }else if(intWeatherNumber == 1){
+                            document.getElementById("txtConditions").innerText = "Conditions: Mostly Clear"
+                            document.querySelector("#iconWeather").className = "bi bi-brightness-high"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a mostly clear sky')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'mostly clear sky')
+                        }else if(intWeatherNumber == 2){
+                            document.getElementById("txtConditions").innerText = "Conditions: Partly Cloudly"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting partly cloudy sky')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'partly cloudy sky')
+                        }else if(intWeatherNumber == 3){
+                            document.getElementById("txtConditions").innerText = "Conditions: Overcast"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting overcast')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'overcast')
+                        }else if(intWeatherNumber == 45){
+                            document.getElementById("txtConditions").innerText = "Conditions: Fog"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-fog"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting fog')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'fog')
+                        }else if(intWeatherNumber == 48){
+                            document.getElementById("txtConditions").innerText = "Conditions: Fog"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-fog"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting fog')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'fog')
+                        }else if(intWeatherNumber == 51){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Drizzle"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a light drizzle')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light drizzle')
+                        }else if(intWeatherNumber == 53){
+                            document.getElementById("txtConditions").innerText = "Conditions: Moderate Drizzle"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a moderate drizzle')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'moderate drizzle')
+                        }else if(intWeatherNumber == 55){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Drizzle"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a heavy drizzle')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy drizzle')
+                        }else if(intWeatherNumber == 56){
+                            document.getElementById("txtConditions").innerText = "Conditions: Moderate Freezing Drizzle"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a moderate freezing drizzle')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'moderate freezing drizzle')
+                        }else if(intWeatherNumber == 57){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Freezing Drizzle"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a heavy freezing drizzle')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy freezing drizzle')
+                        }else if(intWeatherNumber == 61){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Rain"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-rain-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a light rain')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light rain')
+                        }else if(intWeatherNumber == 63){
+                            document.getElementById("txtConditions").innerText = "Conditions: Moderate Rain"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-rain-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting moderate rain')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'moderate rain')
+                        }else if(intWeatherNumber == 65){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Rain"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-rain-heavy-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting heavy rain')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy rain')
+                        }else if(intWeatherNumber == 66){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Freezing Rain"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a light freezing rain')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light feezing rain')
+                        }else if(intWeatherNumber == 67){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Freezing Rain"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-hail-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a heavy freezing rain')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy freezing rain')
+                        }else if(intWeatherNumber == 71){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Snowfall"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a light snowfall')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light snowfall')
+                        }else if(intWeatherNumber == 73){
+                            document.getElementById("txtConditions").innerText = "Conditions: Moderate Snowfall"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a moderate snowfall')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'moderate snowfall')
+                        }else if(intWeatherNumber == 75){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Snowfall"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting a heavy snowfall')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy snowfall')
+                        }else if(intWeatherNumber == 77){
+                            document.getElementById("txtConditions").innerText = "Conditions: Snow Grains"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting snow grains')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'snow grains')
+                        }else if(intWeatherNumber == 80){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Rain Showers"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting light rain showers')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light rain showers')
+                        }else if(intWeatherNumber == 81){
+                            document.getElementById("txtConditions").innerText = "Conditions: Moderate Rain Showers"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting moderate rain showers')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'moderate rain showers')
+                        }else if(intWeatherNumber == 82){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Rain Showers"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-drizzle"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting heavy rain showers')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy rain showers')
+                        }else if(intWeatherNumber == 85){
+                            document.getElementById("txtConditions").innerText = "Conditions: Light Snow Showers"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting light snow showers')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'light snow showers')
+                        }else if(intWeatherNumber == 86){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Snow Showers"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-snow"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting heavy snow showers')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'heavy snow showers')
+                        }else if(intWeatherNumber == 95){
+                            document.getElementById("txtConditions").innerText = "Conditions: Thunderstorms"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting tunderstorms')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'tunderstorms')
+                        }else if(intWeatherNumber == 96){
+                            document.getElementById("txtConditions").innerText = "Conditions: Slight Thunderstorms"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting slight thunderstorms')
+                            strCondtionsAriaLabel.setAttribute('aria-label', 'slight tunderstorms')
+                        }else if(intWeatherNumber == 99){
+                            document.getElementById("txtConditions").innerText = "Conditions: Heavy Thunderstorms"
+                            document.querySelector("#iconWeather").className = "bi bi-cloud-lightning-rain-fill"
+                            strWeatherIconAriaLabel.setAttribute('aria-label', 'Icon repersenting heavy thunderstorms')
+                            strCondtionsAriaLabel.setAttribute('aria-label', '')
+                        }
                     })
             })  
     }
+    //this just displays a sweet alert if the location fails
     function noLocation() {
         Swal.fire("Error", "Location access denied.", "error");
     }
 
-    // Start asking for location on page load
-    requestLocation();
+    //lastly, we run the main function 
+    requestLocation();    
 
-    
-
-            
-            
+    //I did use ChatGPT to help trubble shoot my code.
+    //Firstly, I was having issues with changing information displayed on the screen, so I gave it a small snipit of my code and asked
+    //why my "document.querySelector was not working"
+    // it suggested to use "document.getElementById("").innerText" which worked very well so i used it 
+    //I also used it to help with getting the users location. I used a stack overflow page and the open street map and navigator.geolocation.getCurrentPosition(foundLocation, noLocation);
+    //but after playing around with it for a while I could not get it to work so I put it into chatgpt and it suggested brakeing it up 
+    //into two functions and that worked
     </script>
 </body>
 </html>
